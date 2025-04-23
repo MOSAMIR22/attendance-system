@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>تسجيل الغياب</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: 'Arial', sans-serif; direction: rtl; padding: 20px; background-color: #f4f4f4; }
+    label, input, button { display: block; margin: 10px 0; }
+    .students-list { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>نظام تسجيل الغياب</h1>
+
+  <!-- واجهة كود المدرّس -->
+  <div id="auth-div">
+    <label for="teacher-code">ادخل كود المدرس:</label>
+    <input type="password" id="teacher-code" placeholder="كود المدرس">
+    <button onclick="checkCode()">دخول</button>
+  </div>
+
+  <!-- واجهة إدخال المحاضرة -->
+  <div id="lecture-div" style="display:none;">
+    <label for="lecture-name">اسم المحاضرة:</label>
+    <input type="text" id="lecture-name" placeholder="مثال: كيمياء عضوية 2">
+    <button onclick="startLecture()">بدء المحاضرة</button>
+  </div>
+
+  <!-- واجهة تسجيل الغياب -->
+  <div id="attendance-div" style="display:none;">
+    <h2 id="lecture-title"></h2>
+    <label for="student-name">أدخل اسمك:</label>
+    <input type="text" id="student-name">
+    <button onclick="addStudent()">تسجيل الحضور</button>
+
+    <div class="students-list">
+      <h3>قائمة الحضور:</h3>
+      <ul id="students-list"></ul>
+    </div>
+
+    <button onclick="generatePDF()">إنهاء وتوليد PDF</button>
+  </div>
+
+  <script>
+    let students = [];
+    let lectureName = "";
+    const correctCode = "1234"; // كود المدرس السري
+
+    function checkCode() {
+      const code = document.getElementById("teacher-code").value.trim();
+      if (code === correctCode) {
+        document.getElementById("auth-div").style.display = "none";
+        document.getElementById("lecture-div").style.display = "block";
+      } else {
+        alert("الكود غير صحيح.");
+      }
+    }
+
+    function startLecture() {
+      const nameInput = document.getElementById("lecture-name");
+      lectureName = nameInput.value.trim();
+      if (!lectureName) {
+        alert("يرجى إدخال اسم المحاضرة.");
+        return;
+      }
+      document.getElementById("lecture-title").innerText = `المحاضرة: ${lectureName}`;
+      document.getElementById("lecture-div").style.display = "none";
+      document.getElementById("attendance-div").style.display = "block";
+    }
+
+    function addStudent() {
+      const name = document.getElementById("student-name").value.trim();
+      if (!name) {
+        alert("يرجى إدخال الاسم.");
+        return;
+      }
+      students.push(name);
+      updateList();
+      document.getElementById("student-name").value = "";
+    }
+
+    function updateList() {
+      const list = document.getElementById("students-list");
+      list.innerHTML = "";
+      students.forEach((name, index) => {
+        const li = document.createElement("li");
+        li.textContent = `${index + 1}- ${name}`;
+        list.appendChild(li);
+      });
+    }
+
+    async function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const date = new Date().toLocaleDateString('ar-EG');
+
+      doc.setFont('Helvetica');
+      doc.setFontSize(16);
+      doc.text(`تقرير غياب المحاضرة`, 105, 20, { align: "center" });
+      doc.setFontSize(12);
+      doc.text(`المحاضرة: ${lectureName}`, 20, 40);
+      doc.text(`التاريخ: ${date}`, 20, 50);
+      doc.text(`الحضور:`, 20, 60);
+
+      students.forEach((name, i) => {
+        doc.text(`${i + 1}- ${name}`, 30, 70 + i * 10);
+      });
+
+      doc.save(`${lectureName}-${date}.pdf`);
+    }
+  </script>
+</body>
+</html>
