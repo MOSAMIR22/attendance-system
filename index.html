@@ -1,34 +1,39 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>تسجيل الغياب</title>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
   <style>
-    body { font-family: Arial; direction: rtl; padding: 20px; text-align: center; }
+    body { font-family: Arial; direction: rtl; padding: 20px; text-align: center; background-color: #f9f9f9; }
     input, button { margin: 10px; padding: 10px; width: 90%; max-width: 300px; }
-    #studentSection, #teacherSection { display: none; }
+    #studentSection, #teacherSection, #createLecture { display: none; }
     ul { text-align: right; list-style: none; padding: 0; }
+    .link-box { background: #eee; padding: 10px; border-radius: 5px; margin-top: 10px; word-break: break-all; }
   </style>
 </head>
 <body>
   <h2>تسجيل الغياب</h2>
 
+  <!-- تسجيل دخول المدرس -->
   <div id="loginSection">
     <input type="text" id="teacherCode" placeholder="أدخل كود المدرس">
     <button onclick="loginTeacher()">دخول المدرس</button>
+    <p id="loginError" style="color:red;"></p>
   </div>
 
-  <div id="createLecture" style="display:none;">
+  <!-- إنشاء المحاضرة -->
+  <div id="createLecture">
     <input type="text" id="lectureName" placeholder="اسم المحاضرة">
     <button onclick="createLecture()">إنشاء محاضرة</button>
-    <p id="generatedLink"></p>
+    <div id="generatedLink" class="link-box"></div>
   </div>
 
+  <!-- تسجيل اسم الطالب -->
   <div id="studentSection">
     <h3>تسجيل الاسم</h3>
     <input type="text" id="studentName" placeholder="اسم الطالب">
@@ -36,6 +41,7 @@
     <p id="confirmation"></p>
   </div>
 
+  <!-- قائمة الحضور وتحميل PDF -->
   <div id="teacherSection">
     <h3>قائمة الحضور</h3>
     <ul id="namesList"></ul>
@@ -43,6 +49,7 @@
   </div>
 
 <script>
+  // إعداد Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyCWsnkwFXzfUhag0KyCQAyuqh5Lk1a5qvQ",
     authDomain: "attendance-system-d1fdb.firebaseapp.com",
@@ -59,7 +66,11 @@
   const lectureId = params.get("lecture");
 
   if (lectureId) {
+    // عرض صفحة الطالب فقط
     document.getElementById("studentSection").style.display = "block";
+  } else {
+    // عرض صفحة المدرس
+    document.getElementById("loginSection").style.display = "block";
   }
 
   function loginTeacher() {
@@ -68,7 +79,7 @@
       document.getElementById("loginSection").style.display = "none";
       document.getElementById("createLecture").style.display = "block";
     } else {
-      alert("كود غير صحيح");
+      document.getElementById("loginError").textContent = "كود غير صحيح";
     }
   }
 
@@ -80,7 +91,10 @@
     db.collection("lectures").doc(newId).set({ name: name, created: Date.now() })
       .then(() => {
         const link = window.location.href.split("?")[0] + "?lecture=" + newId;
-        document.getElementById("generatedLink").innerHTML = "الرابط: <a href='" + link + "' target='_blank'>" + link + "</a>";
+        document.getElementById("createLecture").style.display = "none";
+        document.getElementById("teacherSection").style.display = "block";
+        document.getElementById("generatedLink").innerHTML = "رابط تسجيل الطلاب: <br><a href='" + link + "' target='_blank'>" + link + "</a>";
+        loadStudents(newId);
       });
   }
 
@@ -96,6 +110,20 @@
       .then(() => {
         document.getElementById("confirmation").textContent = "تم تسجيل الحضور بنجاح";
         document.getElementById("studentName").value = "";
+      });
+  }
+
+  function loadStudents(id) {
+    db.collection("lectures").doc(id).collection("students")
+      .orderBy("timestamp").onSnapshot(snapshot => {
+        const list = document.getElementById("namesList");
+        list.innerHTML = "";
+        let i = 1;
+        snapshot.forEach(doc => {
+          const li = document.createElement("li");
+          li.textContent = `${i++}. ${doc.data().name}`;
+          list.appendChild(li);
+        });
       });
   }
 
@@ -121,7 +149,6 @@
               }
             }
           ],
-          defaultStyle: { font: "Helvetica" },
           styles: {
             header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] }
           }
