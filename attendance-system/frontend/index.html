@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>نظام تسجيل الغياب</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>تسجيل الدخول</h2>
+    <input type="text" id="username" placeholder="اسم المستخدم">
+    <input type="password" id="password" placeholder="كلمة المرور">
+    <button onclick="login()">دخول</button>
+
+    <div id="actions" style="display:none;">
+      <button onclick="mark('حضور')">تسجيل حضور</button>
+      <button onclick="mark('غياب')">تسجيل غياب</button>
+    </div>
+
+    <p id="message"></p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
